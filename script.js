@@ -542,7 +542,7 @@ let BACKEND_URL = (function() {
         }
 
         // 6. Deployed production host (e.g. Vercel, Netlify, custom domain)
-        return 'https://diet-and-nutrition.onrender.com';
+        return 'https://diet-and-nutrition-a3eh.onrender.com';
     }
     return 'http://localhost:3000';
 })();
