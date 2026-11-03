@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Health Tracker Ultimate</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= LOGIN PAGE ================= -->
+<div id="loginPage">
+    <header class="login-header">
+        <h2 class="d-flex align-items-center gap-2">🏋️ <span>Health Tracker</span></h2>
+        <nav class="d-flex align-items-center gap-2">
+            <span id="loginBackendPill" class="badge px-3 py-2 fs-6 rounded-pill d-inline-flex align-items-center gap-1" style="background: rgba(111, 174, 61, 0.15); color: #6FAE3D; border: 1px solid #6FAE3D;" title="Spring Boot & MySQL Status">
+                <span class="status-indicator-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #6FAE3D; display: inline-block;"></span>
+                <span id="loginBackendStatusText">🟢 Backend (Port 8080)</span>
+            </span>
+            <span class="badge px-3 py-2 fs-6 rounded-pill" style="cursor:pointer; background: #1C1C1C; color: #F5F5F5; border: 1px solid #3A281E;" onclick="switchLoginTab('login')">🔑 Login</span>
+            <span class="badge px-3 py-2 fs-6 rounded-pill" style="cursor:pointer; background: #1C1C1C; color: #F5F5F5; border: 1px solid #3A281E;" onclick="switchLoginTab('register')">📝 Register</span>
+            <span class="badge px-3 py-2 fs-6 rounded-pill" style="cursor:pointer; background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff;" data-bs-toggle="modal" data-bs-target="#aboutModal">ℹ️ About</span>
+        </nav>
+    </header>
+    <div class="login-container">
+        <div class="login-card">
+            <div style="font-size:55px; margin-bottom:10px">💪</div>
+
+            <!-- Login / Register Switcher Tabs -->
+            <div class="login-tabs-container">
+                <button type="button" class="login-tab-btn active" id="tabBtnLogin" onclick="switchLoginTab('login')">🔑 Login</button>
+                <button type="button" class="login-tab-btn" id="tabBtnRegister" onclick="switchLoginTab('register')">📝 Register</button>
+            </div>
+
+            <!-- LOGIN PANE -->
+            <div id="loginPane">
+                <h4>Welcome Back!</h4>
+                <p class="text-muted small mb-3">Sign in with your registered email & password</p>
+                <div id="loginValidationAlert" class="alert alert-danger d-none py-2 px-3 small mb-2 text-start rounded-3" role="alert" style="background: rgba(220, 53, 69, 0.15); border: 1px solid #dc3545; color: #ff8585;"></div>
+                <div class="input-group-custom">
+                    <i class="bi bi-envelope-fill"></i>
+                    <input type="email" id="userEmail" placeholder="Email Address (e.g. name@example.com)" autocomplete="email" onkeydown="if(event.key==='Enter') login()">
+                </div>
+                <div class="input-group-custom">
+                    <i class="bi bi-lock-fill"></i>
+                    <input type="password" id="userPassword" placeholder="Enter Password" autocomplete="current-password" onkeydown="if(event.key==='Enter') login()">
+                </div>
+                <input type="hidden" id="userName" value="">
+                <input type="hidden" id="userPhone" value="">
+                <button class="login-btn" id="btnLoginDashboard" onclick="login()">🚀 Login to Dashboard</button>
+                <button class="btn btn-outline-secondary w-100 mt-2 py-2 rounded-3 small fw-bold" onclick="quickDemoLogin()">⚡ Quick Guest / Demo Login</button>
+            </div>
+
+            <!-- REGISTER PANE -->
+            <div id="registerPane" class="d-none">
+                <h4>Create Account</h4>
+                <p class="text-muted small mb-3">Start your fitness & transformation challenge</p>
+                <div id="registerValidationAlert" class="alert alert-danger d-none py-2 px-3 small mb-2 text-start rounded-3" role="alert" style="background: rgba(220, 53, 69, 0.15); border: 1px solid #dc3545; color: #ff8585;"></div>
+                <div class="input-group-custom">
+                    <i class="bi bi-person-fill"></i>
+                    <input type="text" id="regName" placeholder="Full Name" autocomplete="name" onkeydown="if(event.key==='Enter') registerUser()">
+                </div>
+                <div class="input-group-custom" id="regPhoneGroup">
+                    <i class="bi bi-telephone-fill"></i>
+                    <input type="tel" id="regPhone" placeholder="Phone Number (10 digits, e.g. 9876543210)" maxlength="16" inputmode="tel" autocomplete="tel" onkeydown="if(event.key==='Enter') registerUser()">
+                </div>
+                <div id="regPhoneFeedback" class="small text-start px-2 mb-2 d-none" style="font-size: 0.8rem; margin-top: -8px; min-height: 20px; transition: all 0.2s ease;"></div>
+                <div class="input-group-custom">
+                    <i class="bi bi-envelope-fill"></i>
+                    <input type="email" id="regEmail" placeholder="Email Address (e.g. name@example.com)" autocomplete="email" onkeydown="if(event.key==='Enter') registerUser()">
+                </div>
+                <div class="input-group-custom">
+                    <i class="bi bi-lock-fill"></i>
+                    <input type="password" id="regPassword" placeholder="Create Password" autocomplete="new-password" onkeydown="if(event.key==='Enter') registerUser()">
+                </div>
+                <div class="input-group-custom">
+                    <i class="bi bi-lock-fill"></i>
+                    <input type="password" id="regConfirmPassword" placeholder="Confirm Password" autocomplete="new-password" onkeydown="if(event.key==='Enter') registerUser()">
+                </div>
+                <button class="login-btn btn-success" id="btnRegisterUser" onclick="registerUser()">📝 Register & Start</button>
+            </div>
+
+            <div class="text-center mt-3 pt-2 border-top">
+                <button class="btn btn-sm btn-link text-decoration-none text-muted" data-bs-toggle="modal" data-bs-target="#aboutModal">
+                    ℹ️ About Health Tracker App
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= ABOUT MODAL ================= -->
+<div class="modal fade" id="aboutModal">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background: #181818; border: 1px solid #333; color: #F5F5F5;">
+            <div class="modal-header" style="border-bottom: 1px solid #292929; background: #121212;">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fs-4">🤖</span>
+                    <h5 class="modal-title fw-bold" style="color: #FF8A1F;">About Healthify & AI Health Coach</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div style="font-size: 50px; margin-bottom: 8px;">🏋️‍♂️🥗🤖</div>
+                    <h3 class="fw-bold text-white mb-1">Healthify <span style="color: #FF8A1F;">Ultimate</span></h3>
+                    <p class="text-muted small mb-0">Intelligent AI Health Assistant, Computer Vision Nutrition & Adaptive Workout Platform</p>
+                </div>
+
+                <!-- AI CHATBOT & CORE CAPABILITIES CARDS -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 h-100" style="background: #202020; border: 1px solid #333;">
+                            <h6 class="fw-bold d-flex align-items-center gap-2" style="color: #FF8A1F;">
+                                <i class="bi bi-chat-dots-fill"></i> 🤖 AI Health Coach & Chatbot
+                            </h6>
+                            <p class="small text-muted mb-2">Powered by GroqCloud fast inference (<code>llama-3.3-70b-versatile</code> & <code>openai/gpt-oss-120b</code>).</p>
+                            <ul class="list-unstyled small mb-0" style="line-height: 1.7;">
+                                <li><span style="color: #6FAE3D;">✔</span> Conversational fitness, calorie & macro advisory</li>
+                                <li><span style="color: #6FAE3D;">✔</span> Strictly grounded in your Profile Calculator BMR & TDEE</li>
+                                <li><span style="color: #6FAE3D;">✔</span> Dynamic recipe creation & natural language diet modifications</li>
+                                <li><span style="color: #6FAE3D;">✔</span> Real-time meal logging & planned vs actual tracking</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 h-100" style="background: #202020; border: 1px solid #333;">
+                            <h6 class="fw-bold d-flex align-items-center gap-2" style="color: #6FAE3D;">
+                                <i class="bi bi-file-earmark-arrow-up-fill"></i> 📸 Document & Vision Intelligence
+                            </h6>
+                            <p class="small text-muted mb-2">Multimodal extraction from meal photos, grocery lists, clinic charts, and prescriptions.</p>
+                            <ul class="list-unstyled small mb-0" style="line-height: 1.7;">
+                                <li><span style="color: #6FAE3D;">✔</span> <strong>Multimodal VLM:</strong> Groq Vision (<code>llama-3.2-11b-vision-preview</code>)</li>
+                                <li><span style="color: #6FAE3D;">✔</span> <strong>Document Parsers:</strong> PDF text extraction, DOCX & TXT streaming</li>
+                                <li><span style="color: #6FAE3D;">✔</span> <strong>OCR Engine:</strong> Tesseract.js client OCR & scanned page rendering</li>
+                                <li><span style="color: #6FAE3D;">✔</span> <strong>Format Support:</strong> JPG, PNG, WEBP, PDF, DOCX, TXT</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 h-100" style="background: #202020; border: 1px solid #333;">
+                            <h6 class="fw-bold d-flex align-items-center gap-2" style="color: #38bdf8;">
+                                <i class="bi bi-shield-check"></i> 🔬 Authoritative Nutritional Grounding
+                            </h6>
+                            <p class="small text-muted mb-2">Nutritional integrity based on official food composition tables.</p>
+                            <ul class="list-unstyled small mb-0" style="line-height: 1.7;">
+                                <li><span style="color: #6FAE3D;">✔</span> <strong>USDA FoodData Central</strong> & <strong>ICMR-NIN IFCT</strong> verified</li>
+                                <li><span style="color: #6FAE3D;">✔</span> <strong>Preparation States:</strong> Raw vs cooked vs boiled vs roasted</li>
+                                <li><span style="color: #6FAE3D;">✔</span> <strong>Atwater Consistency:</strong> Strict energy formula validation</li>
+                                <li><span style="color: #6FAE3D;">✔</span> Unrounded ingredient calculations with display precision</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 h-100" style="background: #202020; border: 1px solid #333;">
+                            <h6 class="fw-bold d-flex align-items-center gap-2" style="color: #eab308;">
+                                <i class="bi bi-calendar3-range-fill"></i> 🥗 Personalized 5-Meal Plans
+                            </h6>
+                            <p class="small text-muted mb-2">Tailored 7-Day & 25-Day transformation schedules.</p>
+                            <ul class="list-unstyled small mb-0" style="line-height: 1.7;">
+                                <li><span style="color: #6FAE3D;">✔</span> <strong>Confirmed Foods Collection:</strong> Select, edit, replace or merge</li>
+                                <li><span style="color: #6FAE3D;">✔</span> <strong>5 Meal Slots:</strong> Breakfast, 11:30 AM Fruit, Lunch, Snack, Dinner</li>
+                                <li><span style="color: #6FAE3D;">✔</span> <strong>Calorie Target Scaling:</strong> Accurately matches 2,100 kcal target</li>
+                                <li><span style="color: #6FAE3D;">✔</span> Instant PDF export & clean print-ready formatting</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PLATFORM TECH STACK FOOTER -->
+                <div class="p-3 rounded-3 text-center" style="background: rgba(255, 138, 31, 0.08); border: 1px solid rgba(255, 138, 31, 0.25);">
+                    <div class="small fw-semibold text-white mb-1">
+                        🚀 Stack: Spring Boot REST Backend • MySQL • Express Node.js Engine • GroqCloud LLM/VLM • Tesseract OCR
+                    </div>
+                    <div class="text-muted" style="font-size: 11px;">
+                        Version 4.0 • Enterprise Dark Edition • Secure & Privacy Preserving
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MAIN APP ================= -->
+<div id="appPage" class="d-none gym-bg">
+    <!-- COLORFUL MODERN NAVBAR -->
+    <nav class="navbar navbar-dark sticky-top px-4 app-navbar no-print">
+        <div class="d-flex align-items-center gap-3">
+            <div class="dropdown">
+                <button class="btn navbar-btn-menu dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+                    <i class="bi bi-grid-fill fs-5"></i> <span>Menu</span>
+                </button>
+                <ul class="dropdown-menu shadow">
+                    <li class="dropdown-item-styled menu-item-home" onclick="goHome()">
+                        <span class="fs-5">🏠</span> <span>Home Dashboard</span>
+                    </li>
+                    <li class="dropdown-item-styled menu-item-workouts" onclick="openWorkoutsHub()">
+                        <span class="fs-5">🏋️</span> <span>Workouts Hub (Home & Gym)</span>
+                    </li>
+                    <li class="dropdown-item-styled menu-item-profile" onclick="showSection('profile')">
+                        <span class="fs-5">👤</span> <span>Profile & Calculator</span>
+                    </li>
+                    <li class="dropdown-item-styled menu-item-challenge" onclick="showSection('challenge')">
+                        <span class="fs-5">🏆</span> <span>Fitness Challenge</span>
+                    </li>
+                    <li class="dropdown-item-styled menu-item-summary" onclick="showSection('summary')">
+                        <span class="fs-5">📊</span> <span>Food & Workout Summary</span>
+                    </li>
+                    <li class="dropdown-item-styled menu-item-water" onclick="showSection('water')">
+                        <span class="fs-5">💧</span> <span>Water Intake Tracker</span>
+                    </li>
+                    <li><hr class="dropdown-divider my-2"></li>
+                    <li class="dropdown-item-styled menu-item-about" data-bs-toggle="modal" data-bs-target="#aboutModal">
+                        <span class="fs-5">ℹ️</span> <span>About Healthify & AI Coach</span>
+                    </li>
+                    <li class="dropdown-item-styled menu-item-logout" onclick="logout()">
+                        <span class="fs-5">🚪</span> <span>Logout / Switch User</span>
+                    </li>
+                </ul>
+            </div>
+            <span class="navbar-brand navbar-brand-large mb-0">
+                <span>⚡</span> <span>Health Tracker</span>
+            </span>
+        </div>
+        <div class="d-flex align-items-center gap-2 gap-sm-3">
+            <span id="backendStatusPill" class="badge rounded-pill px-3 py-2 d-none d-md-inline-flex align-items-center gap-1" style="background: rgba(111, 174, 61, 0.15); color: #6FAE3D; border: 1px solid #6FAE3D; font-size: 12.5px; cursor: pointer;" onclick="checkBackendHealth(true)" title="Click to refresh Spring Boot & MySQL connection">
+                <span class="status-indicator-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #6FAE3D; display: inline-block;"></span>
+                <span id="backendStatusText">MySQL: healthify_db</span>
+            </span>
+            <button id="headerAiCoachBtn" class="btn btn-sm fw-bold rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-1" style="background: linear-gradient(135deg, #6B3F24 0%, #FF8A1F 100%) !important; color: #ffffff !important; border: 1px solid rgba(255, 138, 31, 0.4); box-shadow: 0 4px 15px rgba(255, 138, 31, 0.3);" onclick="openAICoach()" title="Open AI Health Coach">
+                <span>🤖</span> <span>AI Health Coach</span>
+            </button>
+            <span class="navbar-user-pill d-none d-sm-inline-flex">
+                <i class="bi bi-person-circle"></i>
+                <span id="navUserName">User</span>
+            </span>
+            <button class="btn btn-danger navbar-logout-btn d-flex align-items-center gap-1" onclick="logout()">
+                <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Logout</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast-msg">✅ Action Successful!</div>
+
+    <!-- 1. PROFESSIONAL HOME DASHBOARD -->
+    <section id="categories" class="container section-card" style="max-width: 1100px;">
+        <!-- WELCOME BANNER -->
+        <div class="dash-welcome-card mb-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <span class="badge fw-bold mb-2" id="dashDateBadge" style="background: rgba(255, 138, 31, 0.2); color: #FF8A1F; border: 1px solid rgba(255, 138, 31, 0.35);">Today's Overview</span>
+                    <h2 class="fw-bold mb-1">👋 Welcome, <span id="dashUserName">Athlete</span>!</h2>
+                    <p class="mb-0 text-light opacity-75 small">Your real-time daily fitness, nutrition, steps & challenge command center.</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-sm fw-bold px-3 shadow-sm" style="background: #FF8A1F; color: #0B0B0B; border: none;" onclick="openWorkoutsHub()">
+                        🏋️ Workouts Hub
+                    </button>
+                    <button class="btn btn-outline-light btn-sm fw-bold px-3" onclick="showSection('summary')">
+                        📊 Today's Summary
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6 INTERACTIVE LIVE METRIC CARDS -->
+        <div class="row g-3 mb-4">
+            <!-- 1. WATER INTAKE CARD -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="dash-metric-card">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="metric-icon-bubble metric-bubble-water">💧</div>
+                            <button class="btn btn-sm rounded-pill px-2 py-0" style="border: 1px solid #38bdf8; color: #38bdf8; background: transparent;" onclick="showSection('water')">Tracker ↗</button>
+                        </div>
+                        <h6 class="fw-bold mb-1" style="color: #F5F5F5;">Water Intake</h6>
+                        <div class="dash-metric-val"><span id="dashWaterGlasses">0</span> / <span id="dashWaterTarget">12</span> <small class="fs-6" style="color: #A9A9A9;">Glasses</small></div>
+                        <div class="dash-metric-sub">~<span id="dashWaterLiters">0.00</span>L / <span id="dashWaterTargetLiters">3.0</span>L daily target</div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="progress mb-2" style="height: 8px; border-radius: 10px; background: #262626;">
+                            <div class="progress-bar" id="dashWaterProgressBar" style="width: 0%; background: linear-gradient(90deg, #0284c7, #38bdf8);"></div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small id="dashWaterPercent" style="color: #A9A9A9;">0% Goal</small>
+                            <button class="btn btn-sm fw-bold py-1 px-3 rounded-pill" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color: #ffffff; border: none;" onclick="updateWater(1); renderDashboard();">
+                                +1 Glass (250ml)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. DAILY CALORIES CARD -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="dash-metric-card">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="metric-icon-bubble metric-bubble-calories">🔥</div>
+                            <button class="btn btn-sm rounded-pill px-2 py-0" style="border: 1px solid #FF8A1F; color: #FF8A1F; background: transparent;" onclick="showSection('summary')">Summary ↗</button>
+                        </div>
+                        <h6 class="fw-bold mb-1" style="color: #F5F5F5;">Daily Calories</h6>
+                        <div class="dash-metric-val"><span id="dashCaloriesVal">0</span> / <span id="dashCaloriesGoal">--</span> <small class="fs-6" style="color: #A9A9A9;">kcal</small></div>
+                        <div class="dash-metric-sub"><span id="dashCaloriesRemaining">--</span> kcal remaining today</div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="progress mb-2" style="height: 8px; border-radius: 10px; background: #262626;">
+                            <div class="progress-bar" id="dashCaloriesProgressBar" style="width: 0%; background: linear-gradient(90deg, #6B3F24, #FF8A1F);"></div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small id="dashCaloriesPercent" style="color: #A9A9A9;">0% Target</small>
+                            <button class="btn btn-sm py-1 px-2 rounded-pill small" style="border: 1px solid #3A281E; color: #FF8A1F; background: transparent;" onclick="openCategory('veg')">
+                                + Log Food
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. DAILY PROTEIN CARD -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="dash-metric-card">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="metric-icon-bubble metric-bubble-protein">💪</div>
+                            <span class="badge" style="background: rgba(255, 138, 31, 0.15); color: #FF8A1F; border: 1px solid rgba(255, 138, 31, 0.3);" id="dashProteinBadge">Protein Goal</span>
+                        </div>
+                        <h6 class="fw-bold mb-1" style="color: #F5F5F5;">Protein Intake</h6>
+                        <div class="dash-metric-val"><span id="dashProteinVal">0</span>g / <span id="dashProteinGoal">--</span>g</div>
+                        <div class="dash-metric-sub"><span id="dashProteinRemaining">--</span> to hit muscle target</div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="progress mb-2" style="height: 8px; border-radius: 10px; background: #262626;">
+                            <div class="progress-bar" id="dashProteinProgressBar" style="width: 0%; background: linear-gradient(90deg, #6B3F24, #FF8A1F);"></div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small id="dashProteinPercent" style="color: #A9A9A9;">0% Goal</small>
+                            <button class="btn btn-sm py-1 px-2 rounded-pill small" style="border: 1px solid #3A281E; color: #FF8A1F; background: transparent;" onclick="openSupplements()">
+                                🍼 Supplements
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. DAILY STEPS / WALKING TRACKER CARD -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="dash-metric-card">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="metric-icon-bubble metric-bubble-steps">👣</div>
+                            <span class="badge" style="background: rgba(111, 174, 61, 0.18); color: #6FAE3D; border: 1px solid rgba(111, 174, 61, 0.35);" id="dashStepBadge">Active</span>
+                        </div>
+                        <h6 class="fw-bold mb-1" style="color: #F5F5F5;">Daily Steps Tracker</h6>
+                        <div class="dash-metric-val"><span id="dashStepsVal">0</span> / <span id="dashStepGoal">10,000</span> <small class="fs-6" style="color: #A9A9A9;">Steps</small></div>
+                        <div class="dash-metric-sub">~<span id="dashStepKm">0.00</span> km walked • ~<span id="dashStepKcal">0</span> kcal burned</div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="progress mb-2" style="height: 8px; border-radius: 10px; background: #262626;">
+                            <div class="progress-bar" id="dashStepProgressBar" style="width: 0%; background: linear-gradient(90deg, #4D8424, #6FAE3D);"></div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small id="dashStepPercent" style="color: #A9A9A9;">0% Completed</small>
+                            <button class="btn btn-sm fw-bold py-1 px-3 rounded-pill shadow-sm" style="background: linear-gradient(135deg, #4D8424, #6FAE3D); color: #fff; border: none;" onclick="openStepsModal()">
+                                ➕ Add Steps
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. BODY WEIGHT & BMR PROFILE CARD -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="dash-metric-card">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="metric-icon-bubble metric-bubble-weight">⚖️</div>
+                            <button class="btn btn-sm rounded-pill px-2 py-0" style="border: 1px solid #FF8A1F; color: #FF8A1F; background: transparent;" onclick="showSection('profile')">Profile ↗</button>
+                        </div>
+                        <h6 class="fw-bold mb-1" style="color: #F5F5F5;">Body Weight & Fitness Goal</h6>
+                        <div class="dash-metric-val"><span id="dashWeightVal">--</span> <small class="fs-6" style="color: #A9A9A9;">kg</small></div>
+                        <div class="dash-metric-sub">BMR: ~<span id="dashBmrVal">--</span> kcal/day</div>
+                    </div>
+                    <div class="mt-3 pt-2" style="border-top: 1px solid #262626;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge" style="background: #151515; color: #FF8A1F; border: 1px solid #3A281E;" id="dashGoalBadge">Set in Profile ↗</span>
+                            <button class="btn btn-sm btn-link text-decoration-none p-0 small" style="color: #FF8A1F;" onclick="showSection('profile')">Edit Goal</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. TODAY'S WORKOUT STATUS CARD -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="dash-metric-card">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="metric-icon-bubble metric-bubble-workout">🏋️</div>
+                            <span id="dashWorkoutBadge"><span class="badge" style="background: #222; color: #A9A9A9;">Rest</span></span>
+                        </div>
+                        <h6 class="fw-bold mb-1" style="color: #F5F5F5;">Today's Workout Session</h6>
+                        <div class="fs-5 fw-bold mb-1 text-truncate" style="color: #FF8A1F;" id="dashWorkoutTitle">Rest / Recovery Day</div>
+                        <div class="dash-metric-sub text-truncate" id="dashWorkoutMuscles">No active routine logged today.</div>
+                    </div>
+                    <div class="mt-3 pt-2 d-flex justify-content-between align-items-center" style="border-top: 1px solid #262626;">
+                        <button class="btn btn-sm w-100 fw-bold rounded-pill" style="background: linear-gradient(135deg, #6B3F24 0%, #FF8A1F 100%); color: #ffffff; border: none; box-shadow: 0 4px 14px rgba(255, 138, 31, 0.3);" onclick="openWorkoutsHub()">
+                            🚀 Explore Workouts (Home & Gym)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 25-DAY FITNESS CHALLENGE INTERACTIVE CARD -->
+        <div class="dash-challenge-box">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div>
+                    <h5 class="fw-bold mb-1 d-flex align-items-center gap-2" style="color: #F5F5F5;">
+                        <span>🏆</span> <span>25-Day Transformation Challenge</span>
+                    </h5>
+                    <p class="small mb-0" style="color: #A9A9A9;">
+                        Status: <strong style="color: #F5F5F5;">Day <span id="dashChallengeCurrentDay">1</span></strong> of <span id="dashChallengeTotalDays">25</span>
+                        • <span id="dashChallengeCompleted" style="color: #6FAE3D; font-weight: 700;">0</span> completed, <span id="dashChallengeRemaining">25</span> remaining
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm fw-bold rounded-pill px-3" style="border: 1.5px solid #FF8A1F; color: #FF8A1F; background: transparent;" onclick="showSection('challenge')">
+                        View Full Challenge Grid ↗
+                    </button>
+                    <button class="btn btn-sm fw-bold rounded-pill px-3" style="background: linear-gradient(135deg, #6B3F24 0%, #FF8A1F 100%); color: #ffffff; border: none;" id="dashChallengeActionBtn" onclick="showSection('summary')">
+                        Finish Today's Day
+                    </button>
+                </div>
+            </div>
+
+            <!-- CHALLENGE PROGRESS BAR -->
+            <div class="progress mb-3" style="height: 12px; border-radius: 10px; background: #262626;">
+                <div class="progress-bar" id="dashChallengeProgressBar" style="width: 0%; background: linear-gradient(90deg, #6B3F24 0%, #FF8A1F 100%); font-weight: 700;">0%</div>
+            </div>
+
+            <!-- DAY-BY-DAY STATUS SCROLLER -->
+            <div class="d-flex gap-2 overflow-x-auto pb-2" id="dashChallengeDayScroller" style="scrollbar-width: thin;"></div>
+        </div>
+
+        <!-- RECENT ACTIVITY & WEEKLY CONSISTENCY & NUTRITION BREAKDOWN -->
+        <div class="row g-3 mb-4">
+            <!-- RECENT ACTIVITY STREAM -->
+            <div class="col-12 col-lg-6">
+                <div class="dash-metric-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0 d-flex align-items-center gap-2" style="color: #F5F5F5;">
+                            <span>⚡</span> <span>Recent Activity Stream</span>
+                        </h6>
+                        <span class="badge" style="background: #151515; color: #A9A9A9; border: 1px solid #262626;">Live Logs</span>
+                    </div>
+                    <div id="dashActivityList" style="max-height: 250px; overflow-y: auto;"></div>
+                </div>
+            </div>
+
+            <!-- TRANSFORMATION CHALLENGE PROGRESS GRAPH -->
+            <div class="col-12 col-lg-6">
+                <div class="dash-metric-card">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <div>
+                            <h6 class="fw-bold mb-0 d-flex align-items-center gap-2" style="color: #F5F5F5;">
+                                <span>📈</span> <span>Transformation Challenge Progress</span>
+                            </h6>
+                            <small id="graphSubtitle" style="color: #A9A9A9;">Day 1 of 25 • 0% Completed</small>
+                        </div>
+                        <button class="btn btn-sm rounded-pill px-3 fw-bold" style="border: 1px solid #6FAE3D; color: #6FAE3D; background: transparent;" onclick="showSection('challenge')">
+                            25 Days ↗
+                        </button>
+                    </div>
+
+                    <!-- GRAPH CANVAS CONTAINER -->
+                    <div style="position: relative; width: 100%; height: 210px; min-height: 200px;">
+                        <canvas id="challengeProgressChart" style="width: 100%; height: 100%; display: block;"></canvas>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-2 mt-1 small" style="border-top: 1px solid #262626;">
+                        <span style="color: #A9A9A9;">X-Axis: Day 1 → Day 25</span>
+                        <span class="fw-bold" style="color: #6FAE3D;" id="graphCompletedBadge">0 / 25 Days Completed (0%)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUICK CATEGORY LAUNCHER -->
+        <h5 class="fw-bold mb-3 mt-4" style="color: #F5F5F5;">🚀 Explore Food Categories & Workout Hubs</h5>
+        <div class="category-grid">
+            <div class="category-card veg-card" onclick="openCategory('veg')">
+                <div style="font-size:38px">🥦</div>Veg Protein
+            </div>
+            <div class="category-card nonveg-card" onclick="openCategory('nonveg')">
+                <div style="font-size:38px">🍗</div>Non-Veg Protein
+            </div>
+            <div class="category-card nuts-card" onclick="openCategory('nuts')">
+                <div style="font-size:38px">🌰</div>Nuts & Fats
+            </div>
+            <div class="category-card fibre-card" onclick="openCategory('fibre')">
+                <div style="font-size:38px">🌾</div>High Fibre
+            </div>
+            <div class="category-card supp-card" onclick="openSupplements()">
+                <div style="font-size:38px">💊</div>Supplements
+            </div>
+            <div class="category-card home-card" onclick="openWorkoutsHub('home')">
+                <div style="font-size:38px">🏠</div>Home Workouts
+            </div>
+            <div class="category-card gym-card" onclick="openWorkoutsHub('gym')">
+                <div style="font-size:38px">🏢</div>Gym Workouts
+            </div>
+        </div>
+    </section>
+
+    <!-- WORKOUTS HUB SECTION -->
+    <section id="workoutHubSection" class="container d-none section-card">
+        <button class="back-btn" onclick="goHome()">⬅️ Back to Dashboard</button>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h3 class="section-title mb-1">🏋️ Workouts Hub</h3>
+                <p class="text-muted small mb-0">Select your environment to explore targeted training routines</p>
+            </div>
+        </div>
+
+        <div class="workout-nav-pills">
+            <button class="workout-tab-btn active" id="tabHomeWorkouts" onclick="switchWorkoutTab('home')">
+                🏠 Home Workouts
+            </button>
+            <button class="workout-tab-btn" id="tabGymWorkouts" onclick="switchWorkoutTab('gym')">
+                🏢 Gym Workouts
+            </button>
+        </div>
+
+        <!-- Filter pills -->
+        <div id="workoutFilters" class="d-flex gap-2 flex-wrap justify-content-center mb-4"></div>
+
+        <!-- Routines Grid -->
+        <div class="row g-3" id="routinesGrid"></div>
+    </section>
+
+    <!-- ROUTINE DETAIL SECTION -->
+    <section id="routineDetailSection" class="container d-none section-card">
+        <button class="back-btn" onclick="openWorkoutsHub()">⬅️ Back to Workouts</button>
+        <div id="routineHeader" class="mb-4"></div>
+
+        <!-- BUILT-IN REST TIMER -->
+        <div class="rest-timer-box">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold" style="color: #F5F5F5;"><i class="bi bi-stopwatch"></i> REST INTERVAL TIMER</span>
+                <span id="timerStatusLabel" class="badge" style="background: #262626; color: #A9A9A9;">Ready</span>
+            </div>
+            <div class="timer-display" id="restTimerDisplay">00:45</div>
+            <div class="d-flex justify-content-center gap-2 mb-3 flex-wrap">
+                <button class="timer-btn-preset" onclick="setRestTimerPreset(30)">30s</button>
+                <button class="timer-btn-preset active" id="preset45" onclick="setRestTimerPreset(45)">45s</button>
+                <button class="timer-btn-preset" onclick="setRestTimerPreset(60)">60s</button>
+                <button class="timer-btn-preset" onclick="setRestTimerPreset(90)">90s</button>
+                <button class="timer-btn-preset" onclick="setRestTimerPreset(120)">2m</button>
+            </div>
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn px-4 fw-bold" id="timerStartBtn" style="background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff; border: none; border-radius: 20px;" onclick="toggleRestTimer()">▶️ Start Rest</button>
+                <button class="btn px-3 fw-bold" style="border: 1px solid #3A281E; color: #A9A9A9; background: transparent; border-radius: 20px;" onclick="resetRestTimer()">🔄 Reset</button>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0 fw-bold" style="color: #F5F5F5;">📋 Exercises in this Routine</h4>
+            <button class="btn btn-sm rounded-pill px-3 fw-bold" style="border: 1px solid #6FAE3D; color: #6FAE3D; background: transparent;" onclick="toggleAllExercises(true)">Check All</button>
+        </div>
+        <div id="routineExerciseList" class="mb-4"></div>
+
+        <div class="text-center pt-3" style="border-top: 1px solid #262626;">
+            <button class="btn btn-lg px-5 shadow fw-bold rounded-pill" style="background: linear-gradient(135deg, #4D8424, #6FAE3D); color: #fff; border: none;" onclick="logCurrentRoutineComplete()">
+                🎉 Complete & Log Workout to Today's Summary
+            </button>
+        </div>
+    </section>
+
+    <!-- 2. FOOD LIST SECTION -->
+    <section id="foodSection" class="container d-none section-card">
+        <button class="back-btn" onclick="goHome()">⬅️ Back to Dashboard</button>
+        <h3 id="foodTitle" class="section-title"></h3>
+        <div class="row" id="foodList"></div>
+    </section>
+
+    <!-- 3. PROFILE & BMR SECTION -->
+    <section id="profile" class="container d-none section-card">
+        <div class="breadcrumbs">Home / Fitness & Health / Calorie Calculator</div>
+        <h3 class="section-title">Calorie & Gain Calculator</h3>
+        <!-- ACTIVE OFFICIAL GOAL BANNER -->
+        <div id="activeProfileGoalBanner" class="p-3 mb-4 rounded-4 d-none" style="background: rgba(111, 174, 61, 0.1); border: 1.5px solid #6FAE3D;">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <span class="badge mb-1 px-2 py-1" style="background: #6FAE3D; color: #111; font-weight: 700; font-size: 11px;">CURRENT OFFICIAL GOAL</span>
+                    <h5 class="mb-1 fw-bold" style="color: #F5F5F5;"><span id="profileActiveGoalTitle">--</span>: <span id="profileActiveGoalCalories" style="color: #6FAE3D;">--</span> kcal/day</h5>
+                    <small style="color: #A9A9A9;">BMR: <span id="profileActiveBmr">--</span> kcal | Maintenance (TDEE): <span id="profileActiveTdee">--</span> kcal <span id="profileActiveGoalDate"></span></small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge px-3 py-2 rounded-pill" style="background: #1C1C1C; color: #6FAE3D; border: 1px solid #6FAE3D;">Active on Dashboard ✅</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-form-grid">
+            <div class="form-group">
+                <label>Gender</label>
+                <select id="pGender">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Age (years)</label>
+                <input type="number" id="pAge" placeholder="e.g. 25">
+            </div>
+            <div class="form-group">
+                <label>Weight (kg)</label>
+                <input type="number" id="pWeight" placeholder="e.g. 70">
+            </div>
+            <div class="form-group">
+                <label>Height (cm)</label>
+                <input type="number" id="pHeight" placeholder="e.g. 175">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Activity Level</label>
+                <select id="pActivity">
+                    <option value="1.2">Sedentary: little or no exercise</option>
+                    <option value="1.375">Light: exercise 1-3 times/week</option>
+                    <option value="1.55">Moderate: exercise 4-5 times/week</option>
+                    <option value="1.725">Active: daily exercise or intense 3-4 times/week</option>
+                    <option value="1.9">Very Active: intense exercise 6-7 times/week</option>
+                    <option value="2.0">Extra Active: very intense daily or physical job</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn w-100 mt-3 py-2 fw-bold rounded-3" style="background: linear-gradient(135deg, #6B3F24 0%, #FF8A1F 100%); color: #fff; border: none; box-shadow: 0 4px 15px rgba(255, 138, 31, 0.35);" onclick="calculateProfile()">🧮 Calculate Result</button>
+        <div id="resultsArea" class="d-none">
+            <div class="result-header">
+                <h3 style="color: #F5F5F5;">Result</h3>
+                <button class="btn btn-sm" style="border: 1px solid #3A281E; color: #FF8A1F; background: transparent;" onclick="window.print()">🖨️ Print</button>
+            </div>
+            <h5 class="mt-4 fw-bold" style="color: #6FAE3D;">📈 Weight Gain Goals</h5>
+            <div class="cal-row gain-row" id="cardFastGain" onclick="selectCalorieGoal('Fast Weight Gain', 1.2)">
+                <div><h5>Fast Weight Gain</h5><p>0.5 kg/week</p></div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end">
+                        <span class="cal-val" id="resFastGain">0</span> <span class="cal-perc">120%</span><br><span class="small text-muted">Calories/day</span>
+                    </div>
+                    <button type="button" class="btn btn-select-goal" id="btnGoalFastGain" onclick="event.stopPropagation(); selectCalorieGoal('Fast Weight Gain', 1.2)">🎯 Select This Goal</button>
+                </div>
+            </div>
+            <div class="cal-row gain-row" id="cardMildGain" onclick="selectCalorieGoal('Mild Weight Gain', 1.1)">
+                <div><h5>Mild Weight Gain</h5><p>0.25 kg/week</p></div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end">
+                        <span class="cal-val" id="resMildGain">0</span> <span class="cal-perc">110%</span><br><span class="small text-muted">Calories/day</span>
+                    </div>
+                    <button type="button" class="btn btn-select-goal" id="btnGoalMildGain" onclick="event.stopPropagation(); selectCalorieGoal('Mild Weight Gain', 1.1)">🎯 Select This Goal</button>
+                </div>
+            </div>
+            <h5 class="mt-4 fw-bold" style="color: #FF8A1F;">📉 Maintenance & Loss</h5>
+            <div class="cal-row" id="cardMaintain" onclick="selectCalorieGoal('Maintain Weight', 1.0)">
+                <div><h5>Maintain weight</h5><p>0 kg/week</p></div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end">
+                        <span class="cal-val" id="resMaintain">0</span> <span class="cal-perc">100%</span><br><span class="small text-muted">Calories/day</span>
+                    </div>
+                    <button type="button" class="btn btn-select-goal" id="btnGoalMaintain" onclick="event.stopPropagation(); selectCalorieGoal('Maintain Weight', 1.0)">🎯 Select This Goal</button>
+                </div>
+            </div>
+            <div class="cal-row" id="cardMildLoss" onclick="selectCalorieGoal('Mild Weight Loss', 0.9)">
+                <div><h5>Mild weight loss</h5><p>0.25 kg/week</p></div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end">
+                        <span class="cal-val" id="resMild">0</span> <span class="cal-perc">90%</span><br><span class="small text-muted">Calories/day</span>
+                    </div>
+                    <button type="button" class="btn btn-select-goal" id="btnGoalMildLoss" onclick="event.stopPropagation(); selectCalorieGoal('Mild Weight Loss', 0.9)">🎯 Select This Goal</button>
+                </div>
+            </div>
+            <div class="cal-row" id="cardLoss" onclick="selectCalorieGoal('Weight Loss', 0.79)">
+                <div><h5>Weight loss</h5><p>0.5 kg/week</p></div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end">
+                        <span class="cal-val" id="resLoss">0</span> <span class="cal-perc">79%</span><br><span class="small text-muted">Calories/day</span>
+                    </div>
+                    <button type="button" class="btn btn-select-goal" id="btnGoalLoss" onclick="event.stopPropagation(); selectCalorieGoal('Weight Loss', 0.79)">🎯 Select This Goal</button>
+                </div>
+            </div>
+            <div class="cal-row" id="cardExtremeLoss" onclick="selectCalorieGoal('Extreme Weight Loss', 0.59)">
+                <div><h5>Extreme weight loss</h5><p>1 kg/week</p></div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end">
+                        <span class="cal-val" id="resExtreme">0</span> <span class="cal-perc">59%</span><br><span class="small text-muted">Calories/day</span>
+                    </div>
+                    <button type="button" class="btn btn-select-goal" id="btnGoalExtremeLoss" onclick="event.stopPropagation(); selectCalorieGoal('Extreme Weight Loss', 0.59)">🎯 Select This Goal</button>
+                </div>
+            </div>
+
+            <!-- GOAL CONFIRMATION & SAVE SECTION -->
+            <div id="goalConfirmationSection" class="d-none mt-4 p-4 rounded-4" style="background: #181818; border: 1.5px solid #FF8A1F; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);">
+                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fs-4">🎯</span>
+                        <h4 class="mb-0 fw-bold" style="color: #F5F5F5;">Your Selected Fitness Goal</h4>
+                    </div>
+                    <span class="badge px-3 py-1 rounded-pill" style="background: rgba(255, 138, 31, 0.15); color: #FF8A1F; border: 1px solid #FF8A1F;">Ready to Save</span>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 rounded-3" style="background: #121212; border: 1px solid #262626;">
+                            <small class="text-uppercase fw-bold" style="color: #A9A9A9; font-size: 11px; letter-spacing: 0.5px;">Selected Goal</small>
+                            <div class="fs-5 fw-bold mt-1" id="confirmGoalName" style="color: #FF8A1F;">--</div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 rounded-3" style="background: #121212; border: 1px solid #262626;">
+                            <small class="text-uppercase fw-bold" style="color: #A9A9A9; font-size: 11px; letter-spacing: 0.5px;">Your Daily Calorie Target</small>
+                            <div class="fs-5 fw-bold mt-1" style="color: #6FAE3D;"><span id="confirmCalorieTarget">0</span> <small class="fs-6" style="color: #A9A9A9;">kcal/day</small></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pt-2" style="border-top: 1px solid #262626;">
+                    <small style="color: #A9A9A9;">Click any other goal above to change your selection before saving.</small>
+                    <button type="button" id="btnConfirmSaveGoal" class="btn px-4 py-2 fw-bold rounded-pill shadow" style="background: linear-gradient(135deg, #4D8424, #6FAE3D); color: #fff; border: none;" onclick="confirmAndSaveCalorieGoal()">
+                        💾 Confirm & Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. SUPPLEMENTS SECTION -->
+    <section id="supplements" class="container d-none section-card">
+        <button class="back-btn" onclick="goHome()">⬅️ Back to Dashboard</button>
+        <h3 class="section-title">💊 Choose Supplement Type</h3>
+        <div id="suppSelection" class="supp-choice-container">
+            <div class="supp-choice-card whey-bg" onclick="showBrandList('whey')">🍼 Whey Protein</div>
+            <div class="supp-choice-card creatine-bg" onclick="showBrandList('creatine')">⚡ Creatine</div>
+        </div>
+        <div id="brandListSection" class="d-none mt-4">
+            <button class="btn btn-sm mb-3" style="border: 1px solid #3A281E; color: #FF8A1F; background: transparent;" onclick="resetSupplements()">⬅️ Change Type</button>
+            <h4 id="suppListTitle" class="mb-3" style="color: #F5F5F5;"></h4>
+            <div class="instruction-box">
+                <h5>📝 How to use:</h5>
+                <p id="suppInstructions" class="mb-0"></p>
+            </div>
+            <div class="row" id="brandsGrid"></div>
+        </div>
+    </section>
+
+    <!-- 5. SUMMARY SECTION -->
+    <section id="summary" class="container d-none section-card">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <h3 class="section-title mb-0" id="summaryHeading">📊 Today's Summary</h3>
+                <span class="badge" id="summaryDayBadge" style="background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff;">⭐ Today / Active</span>
+                <select id="summaryDaySelect" class="form-select form-select-sm d-none" style="width: auto; background: #1C1C1C; color: #F5F5F5; border: 1px solid #3A281E; font-size: 0.85rem;" onchange="updateSummary(this.value)"></select>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm no-print" id="summaryBackToDayBtn" style="border: 1px solid #3A281E; color: #38bdf8; background: #1C1C1C; display: none;" onclick="openDayDashboard(currentViewDay)">🔍 View Day Dashboard</button>
+                <button class="btn btn-sm no-print" style="border: 1px solid #3A281E; color: #FF8A1F; background: #1C1C1C;" onclick="window.print()">🖨️ Print Summary</button>
+            </div>
+        </div>
+        <div class="p-3 mb-3 rounded-4 no-print" style="background: #1C1C1C; border: 1px solid #262626;">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="fw-bold fs-5" style="color: #F5F5F5;">🏋️ Workout Today:</div>
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="summaryGymToggle" id="sGymNo" autocomplete="off" checked onclick="setWorkoutMode('none')">
+                    <label class="btn btn-outline-secondary" for="sGymNo">🛌 Rest / None</label>
+
+                    <input type="radio" class="btn-check" name="summaryGymToggle" id="sHomeWorkout" autocomplete="off" onclick="setWorkoutMode('home')">
+                    <label class="btn btn-outline-info" for="sHomeWorkout">🏠 Home</label>
+
+                    <input type="radio" class="btn-check" name="summaryGymToggle" id="sGymYes" autocomplete="off" onclick="setWorkoutMode('gym')">
+                    <label class="btn btn-outline-success" for="sGymYes">🏢 Gym</label>
+                </div>
+            </div>
+            <!-- Active routine banner -->
+            <div id="activeRoutineBanner" class="mt-3 p-3 rounded-3 border d-none" style="background: #151515; border-color: #3A281E !important;">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <span class="badge me-2" id="activeRoutineBadge" style="background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff;">Routine</span>
+                        <strong id="activeRoutineTitle" style="color: #F5F5F5;"></strong>
+                        <div class="small" id="activeRoutineSub" style="color: #A9A9A9;"></div>
+                    </div>
+                    <button class="btn btn-sm rounded-pill" style="border: 1px solid #FF8A1F; color: #FF8A1F; background: transparent;" onclick="openWorkoutsHub()">Browse / Change Routine</button>
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead><tr><th>Food/Supplement</th><th>Qty</th><th>Cals</th><th>Prot</th><th>Fibre</th><th class="no-print">Del</th></tr></thead>
+                <tbody id="summaryBody"></tbody>
+            </table>
+        </div>
+        <div class="p-3 rounded-3 fw-bold mt-2" id="totals" style="background: #1C1C1C; border: 1px solid #3A281E; color: #FF8A1F;">🔥 Total: 0 cal | 💪 0g protein | 🌾 0g fibre</div>
+        <hr style="border-color: #262626;">
+        <div id="workoutSection" class="mb-3 d-none text-center">
+            <label class="fw-bold mb-3 fs-5" style="color: #F5F5F5;">💪 Select Muscles Trained Today:</label>
+            <div class="muscle-btn-group">
+                <input type="checkbox" id="m_chest" name="muscleGroup" value="Chest"><label for="m_chest">Chest</label>
+                <input type="checkbox" id="m_back" name="muscleGroup" value="Back"><label for="m_back">Back</label>
+                <input type="checkbox" id="m_shoulders" name="muscleGroup" value="Shoulders"><label for="m_shoulders">Shoulders</label>
+                <input type="checkbox" id="m_biceps" name="muscleGroup" value="Biceps"><label for="m_biceps">Biceps</label>
+                <input type="checkbox" id="m_triceps" name="muscleGroup" value="Triceps"><label for="m_triceps">Triceps</label>
+                <input type="checkbox" id="m_quads" name="muscleGroup" value="Legs (Quads)"><label for="m_quads">Legs (Quads)</label>
+                <input type="checkbox" id="m_hams" name="muscleGroup" value="Legs (Hams/Glutes)"><label for="m_hams">Hams/Glutes</label>
+                <input type="checkbox" id="m_calves" name="muscleGroup" value="Calves"><label for="m_calves">Calves</label>
+                <input type="checkbox" id="m_abs" name="muscleGroup" value="Abs/Core"><label for="m_abs">Abs/Core</label>
+                <input type="checkbox" id="m_cardio" name="muscleGroup" value="Cardio"><label for="m_cardio">Cardio</label>
+                <input type="checkbox" id="m_rest" name="muscleGroup" value="Rest Day"><label for="m_rest" class="border-danger text-danger">Rest Day</label>
+            </div>
+        </div>
+        <div class="text-center mt-4 no-print">
+            <h5 id="finishTitle" style="color: #F5F5F5;">✅ Finished eating for the day?</h5>
+            <p class="small" style="color: #A9A9A9;">This will save your food & workout to your Challenge History.</p>
+            <button class="btn btn-lg px-5 fw-bold rounded-pill shadow" id="finishBtn" style="background: linear-gradient(135deg, #4D8424, #6FAE3D); color: #ffffff; border: none;" onclick="markDayComplete()">🎉 Finish Day & Mark Challenge</button>
+        </div>
+    </section>
+
+    <!-- 6. WATER SECTION -->
+    <section id="water" class="container d-none section-card">
+        <h3 class="section-title">💧 Water Tracker & Reminder</h3>
+        <div class="p-3 mb-3 rounded-4 text-center" style="background: #1C1C1C; border: 1px solid #38bdf8; color: #F5F5F5;">
+            <span style="font-size: 24px;">⚖️</span>
+            <h5 id="waterRec" class="mt-2 mb-0" style="color: #F5F5F5;">Please enter weight & activity in Profile first.</h5>
+        </div>
+        <div class="p-3 mb-4 rounded-4" style="background: #1C1C1C; border: 1px solid #262626;">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div><strong style="color: #F5F5F5;">⏰ Hydration Timer (18h Cycle)</strong><div class="small" style="color: #A9A9A9;">Reminds every 59 minutes</div></div>
+                <button id="timerBtn" class="btn rounded-pill fw-bold px-3" style="background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff; border: none;" onclick="toggleWaterTimer()">▶️ Start Day Tracker</button>
+            </div>
+            <div id="timerStatus" class="mt-2 text-danger fw-bold d-none">⏳ Next reminder in: <span id="minsLeft">59</span> min</div>
+        </div>
+        <div class="text-center mt-4">
+            <h1 class="display-1 fw-bold" style="color: #38bdf8;"><span id="waterCount">0</span> 🥛</h1>
+            <div class="btn-group mt-3">
+                <button class="btn btn-lg px-4" style="border: 1.5px solid #ef4444; color: #ef4444; background: transparent;" onclick="updateWater(-1)">➖</button>
+                <button class="btn btn-lg px-4 fw-bold" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff; border: none;" onclick="updateWater(1)">➕ Drink</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. CHALLENGE SECTION -->
+    <section id="challenge" class="container d-none section-card">
+        <h3 class="section-title">🏆 Fitness Challenge</h3>
+        <div class="mb-3 p-3 rounded-4" style="background: #1C1C1C; border: 1px solid #262626;">
+            <label class="fw-bold d-block mb-2" style="color: #F5F5F5;">🏋️ Challenge Mode Check:</label>
+            <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="gymRadio" id="gymNo" autocomplete="off" checked onclick="toggleGymMode(false)">
+                <label class="btn btn-outline-secondary" for="gymNo">No, Just Diet</label>
+                <input type="radio" class="btn-check" name="gymRadio" id="gymYes" autocomplete="off" onclick="toggleGymMode(true)">
+                <label class="btn btn-outline-success" for="gymYes">Yes, I Workout</label>
+            </div>
+        </div>
+        <div class="input-group mb-3">
+            <input type="number" id="challengeDays" class="form-control" placeholder="Enter days (e.g. 25)" style="background: #1C1C1C; border: 1px solid #262626; color: #F5F5F5;">
+            <button class="btn fw-bold px-4" style="background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff; border: none;" onclick="createChallenge()">Start New Challenge</button>
+        </div>
+        <div class="p-3 rounded-3 small d-flex gap-3 flex-wrap justify-content-center align-items-center mb-3" style="background: #1C1C1C; border: 1px solid #262626; color: #A9A9A9;">
+            <div><span class="badge" style="background: rgba(111, 174, 61, 0.2); color: #6FAE3D; border: 1px solid #6FAE3D;">✅ Completed</span> Past Finished Day</div>
+            <div><span class="badge" style="background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff;">⭐ Today / Current</span> Active Accessible Day</div>
+            <div><span class="badge" style="background: #111; color: #555; border: 1px solid #222;">🔒 Locked</span> Future Locked Day</div>
+        </div>
+        <div id="challengeGrid" class="d-flex flex-wrap gap-2 justify-content-center"></div>
+    </section>
+
+    <!-- 8. REUSABLE DEDICATED DAY DASHBOARD SECTION -->
+    <section id="dayDashboardSection" class="container d-none section-card" style="max-width: 900px;">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 flex-wrap gap-2" style="border-bottom: 1px solid #262626;">
+            <button class="back-btn mb-0" onclick="goHome()">⬅️ Back to Dashboard</button>
+            <span class="badge fs-6 px-3 py-2" id="dayDashStatusBadge" style="background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff;">⭐ Current</span>
+        </div>
+
+        <!-- CHALLENGE HEADER BANNER -->
+        <div class="dash-welcome-card mb-4 text-center text-sm-start">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <span class="badge fw-bold mb-2" style="background: rgba(255, 138, 31, 0.2); color: #FF8A1F; border: 1px solid rgba(255, 138, 31, 0.35);">🏆 TRANSFORMATION CHALLENGE</span>
+                    <h2 class="fw-bold mb-1" id="dayDashTitle" style="color: #F5F5F5;">Day 1 of 25</h2>
+                    <p class="text-light opacity-75 small mb-0" id="dayDashSubtitle">Daily fitness, nutrition, hydration & step execution center.</p>
+                </div>
+                <div class="text-center p-3 rounded-4" style="background: #151515; border: 1px solid #3A281E;">
+                    <div class="fs-4 fw-bold" style="color: #FF8A1F;" id="dayDashScore">0 / 4</div>
+                    <small style="color: #6FAE3D; font-weight: 700;">Goals Complete</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- TODAY'S PROGRESS BAR -->
+        <div class="p-3 mb-4 rounded-4" style="background: #1C1C1C; border: 1px solid #262626;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold mb-0" style="color: #F5F5F5;">📊 Day Execution Progress</h6>
+                <span class="fw-bold" style="color: #FF8A1F;" id="dayDashProgressPercent">0%</span>
+            </div>
+            <div class="progress" style="height: 12px; border-radius: 10px; background: #262626;">
+                <div class="progress-bar" id="dayDashProgressBar" style="width: 0%; background: linear-gradient(90deg, #6B3F24, #FF8A1F);"></div>
+            </div>
+        </div>
+
+        <!-- 4 DAILY GOALS TILES -->
+        <h5 class="fw-bold mb-3" style="color: #F5F5F5;">🎯 Today's Goals:</h5>
+        <div class="row g-3 mb-4">
+            <!-- 1. STEPS GOAL -->
+            <div class="col-12 col-sm-6">
+                <div class="p-3 rounded-4 h-100 d-flex flex-column justify-content-between" style="background: #1C1C1C; border: 1px solid #262626;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-3">👣</span>
+                            <div>
+                                <h6 class="fw-bold mb-0" style="color: #F5F5F5;">Steps Goal</h6>
+                                <small style="color: #A9A9A9;" id="dayDashStepsSub">Target: 10,000 steps</small>
+                            </div>
+                        </div>
+                        <span id="dayDashStepsBadge" class="badge" style="background: #262626; color: #A9A9A9;">Pending</span>
+                    </div>
+                    <div>
+                        <div class="fs-5 fw-bold mb-2" style="color: #6FAE3D;" id="dayDashStepsVal">0 / 10,000 steps</div>
+                        <button class="btn btn-sm w-100 rounded-pill fw-bold" style="border: 1px solid #6FAE3D; color: #6FAE3D; background: transparent;" onclick="openStepsModal()">
+                            ➕ Log / Add Steps
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. WATER GOAL -->
+            <div class="col-12 col-sm-6">
+                <div class="p-3 rounded-4 h-100 d-flex flex-column justify-content-between" style="background: #1C1C1C; border: 1px solid #262626;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-3">💧</span>
+                            <div>
+                                <h6 class="fw-bold mb-0" style="color: #F5F5F5;">Water Hydration</h6>
+                                <small style="color: #A9A9A9;" id="dayDashWaterSub">Target: 12 glasses (~3L)</small>
+                            </div>
+                        </div>
+                        <span id="dayDashWaterBadge" class="badge" style="background: #262626; color: #A9A9A9;">Pending</span>
+                    </div>
+                    <div>
+                        <div class="fs-5 fw-bold mb-2" style="color: #38bdf8;" id="dayDashWaterVal">0 / 12 glasses</div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm fw-bold flex-grow-1 rounded-pill" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff; border: none;" onclick="updateWater(1); refreshCurrentDayDash();">
+                                +1 Glass (250ml)
+                            </button>
+                            <button class="btn btn-sm rounded-pill px-3" style="border: 1px solid #38bdf8; color: #38bdf8; background: transparent;" onclick="showSection('water')">
+                                Tracker ↗
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. WORKOUT GOAL -->
+            <div class="col-12 col-sm-6">
+                <div class="p-3 rounded-4 h-100 d-flex flex-column justify-content-between" style="background: #1C1C1C; border: 1px solid #262626;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-3">🏋️</span>
+                            <div>
+                                <h6 class="fw-bold mb-0" style="color: #F5F5F5;">Workout Session</h6>
+                                <small style="color: #A9A9A9;" id="dayDashWorkoutSub">Home or Gym Routine</small>
+                            </div>
+                        </div>
+                        <span id="dayDashWorkoutBadge" class="badge" style="background: #262626; color: #A9A9A9;">Pending</span>
+                    </div>
+                    <div>
+                        <div class="fs-6 fw-bold mb-2 text-truncate" style="color: #FF8A1F;" id="dayDashWorkoutVal">No workout selected</div>
+                        <button class="btn btn-sm w-100 rounded-pill fw-bold" style="border: 1px solid #FF8A1F; color: #FF8A1F; background: transparent;" onclick="openWorkoutsHub()">
+                            🚀 Open Workouts Hub
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. NUTRITION GOAL -->
+            <div class="col-12 col-sm-6">
+                <div class="p-3 rounded-4 h-100 d-flex flex-column justify-content-between" style="background: #1C1C1C; border: 1px solid #262626;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-3">🍎</span>
+                            <div>
+                                <h6 class="fw-bold mb-0" style="color: #F5F5F5;">Nutrition & Protein</h6>
+                                <small style="color: #A9A9A9;" id="dayDashNutritionSub">Target: TDEE Calories</small>
+                            </div>
+                        </div>
+                        <span id="dayDashNutritionBadge" class="badge" style="background: #262626; color: #A9A9A9;">Pending</span>
+                    </div>
+                    <div>
+                        <div class="fs-6 fw-bold mb-2 text-truncate" style="color: #FF8A1F;" id="dayDashNutritionVal">0 cal | 0g protein</div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm flex-grow-1 rounded-pill fw-bold" style="border: 1px solid #FF8A1F; color: #FF8A1F; background: transparent;" onclick="openCategory('veg')">
+                                🥗 Log Food
+                            </button>
+                            <button class="btn btn-sm rounded-pill px-3" style="border: 1px solid #3A281E; color: #A9A9A9; background: transparent;" onclick="showSection('summary'); updateSummary(currentViewDay);">
+                                Summary ↗
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DAILY CHALLENGE CHECKLIST -->
+        <div class="p-4 rounded-4 shadow-sm mb-4" style="background: #1C1C1C; border: 1px solid #262626;">
+            <h5 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color: #F5F5F5;">
+                <span>📋</span> <span>Daily Challenge Checklist</span>
+            </h5>
+            <div class="d-flex flex-column gap-2" id="dayDashChecklist"></div>
+        </div>
+
+        <!-- DAY COMPLETION BUTTON & ACTIONS -->
+        <div class="p-4 rounded-4 text-center mb-4" style="background: #1C1C1C; border: 1px solid #262626;" id="dayDashActionCard">
+            <h5 class="fw-bold mb-1" style="color: #F5F5F5;" id="dayDashCompletePrompt">Ready to Complete This Day?</h5>
+            <p class="small mb-3" style="color: #A9A9A9;">Ensure your workouts, steps, hydration, and nutrition are logged.</p>
+            <button class="btn btn-lg px-5 py-3 fw-bold rounded-pill shadow" id="dayDashCompleteBtn" style="background: linear-gradient(135deg, #4D8424, #6FAE3D); color: #ffffff; border: none;" onclick="completeDayFromDashboard()">
+                🎉 Complete Day 1 & Mark Challenge
+            </button>
+        </div>
+
+        <!-- QUICK OPTIONAL SECTION SHORTCUTS -->
+        <div class="d-flex justify-content-center gap-2 flex-wrap pt-2" style="border-top: 1px solid #262626;">
+            <button class="btn btn-sm rounded-pill px-3" style="border: 1px solid #3A281E; color: #FF8A1F; background: transparent;" onclick="openWorkoutsHub()">🏋️ Open Workouts</button>
+            <button class="btn btn-sm rounded-pill px-3" style="border: 1px solid #3A281E; color: #6FAE3D; background: transparent;" onclick="openCategory('veg')">🥗 Open Food/Nutrition</button>
+            <button class="btn btn-sm rounded-pill px-3" style="border: 1px solid #3A281E; color: #38bdf8; background: transparent;" onclick="showSection('water')">💧 Open Water Tracker</button>
+            <button class="btn btn-sm rounded-pill px-3" style="border: 1px solid #3A281E; color: #A9A9A9; background: transparent;" onclick="goHome()">🏠 Back to Dashboard</button>
+        </div>
+    </section>
+
+    <!-- 9. ONE CENTRAL AI HEALTH COACH CHATBOT SECTION -->
+    <section id="aiCoachSection" class="container d-none section-card ai-coach-page-container" style="max-width: 960px;">
+        <!-- CHATBOT TOP BAR / HEADER -->
+        <div class="ai-chat-header d-flex justify-content-between align-items-center mb-3 pb-2 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <button class="back-btn mb-0 d-inline-flex align-items-center gap-1" onclick="goHome()">
+                    <i class="bi bi-arrow-left"></i> <span>Dashboard</span>
+                </button>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="ai-header-icon-box">
+                        <i class="bi bi-stars"></i>
+                    </div>
+                    <div>
+                        <h4 class="ai-header-title mb-0">AI Health Coach</h4>
+                        <div class="ai-header-subtitle" id="aiCoachStatusBadge">
+                            <span class="ai-active-indicator-dot"></span>
+                            <span>Groq Active · Personalized AI Assistant</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button class="btn btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1" onclick="openDietPreparationModal()" title="View confirmed foods and prepare 5-meal diet plan" style="border: 1px solid #6FAE3D; color: #6FAE3D; background: rgba(111,174,61,0.12);">
+                    <i class="bi bi-basket2-fill"></i> <span>Diet Preparation</span>
+                </button>
+                <button class="btn btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1" onclick="openDietPlansModal()" title="View saved 5-meal diet plans" style="border: 1px solid #FF8A1F; color: #FF8A1F; background: rgba(255,138,31,0.12);">
+                    <i class="bi bi-journal-text"></i> <span>My Diet Plans</span>
+                </button>
+                <button class="btn btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1" onclick="openDietTrackingModal()" title="View planned vs actual nutrition" style="border: 1px solid #38bdf8; color: #38bdf8; background: rgba(56,189,248,0.12);">
+                    <i class="bi bi-pie-chart-fill"></i> <span>Planned vs Actual</span>
+                </button>
+                <button class="btn btn-sm ai-btn-clear rounded-pill px-3 py-1" onclick="resetAICoachChat()" title="Start a fresh chat conversation">
+                    <i class="bi bi-arrow-clockwise me-1"></i> New Chat
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN CHAT CARD -->
+        <div class="ai-chat-card rounded-4 overflow-hidden shadow-lg">
+            <!-- CHAT MESSAGES SCROLL AREA -->
+            <div id="aiCoachMessages" class="ai-messages-container p-3 p-md-4">
+                <!-- Initial Centered Welcome Area (Visible when no conversation yet) -->
+                <div id="aiCoachWelcomeArea" class="ai-welcome-box my-auto py-4 text-center">
+                    <div class="ai-welcome-avatar mb-3">
+                        <div class="ai-welcome-sparkle"><i class="bi bi-stars"></i></div>
+                    </div>
+                    <h2 class="ai-welcome-title mb-2">Hello! How can I help you today?</h2>
+                    <p class="ai-welcome-subtitle mb-4">You can ask questions or upload a photo or document.</p>
+
+                    <div class="ai-welcome-attach-box mx-auto">
+                        <div class="ai-welcome-attach-label mb-3">Attach a photo or document</div>
+                        <div class="ai-attach-options-grid">
+                            <button type="button" class="ai-attach-option-btn" onclick="triggerCoachFileSelect('photo')">
+                                <span class="ai-option-icon">📷</span>
+                                <span class="ai-option-name">Photo</span>
+                                <span class="ai-option-formats">JPG, PNG, WEBP</span>
+                            </button>
+                            <button type="button" class="ai-attach-option-btn" onclick="triggerCoachFileSelect('pdf')">
+                                <span class="ai-option-icon">📄</span>
+                                <span class="ai-option-name">PDF</span>
+                                <span class="ai-option-formats">PDF Document</span>
+                            </button>
+                            <button type="button" class="ai-attach-option-btn" onclick="triggerCoachFileSelect('docx')">
+                                <span class="ai-option-icon">📝</span>
+                                <span class="ai-option-name">DOCX</span>
+                                <span class="ai-option-formats">DOCX, TXT</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TYPING / LOADING INDICATOR -->
+            <div id="aiCoachTyping" class="ai-typing-indicator px-4 py-2 d-none">
+                <div class="d-flex align-items-center gap-2 small text-muted">
+                    <div class="spinner-grow spinner-grow-sm" role="status" style="color: #FF8A1F; width: 0.85rem; height: 0.85rem;"></div>
+                    <span>AI Health Coach is thinking...</span>
+                </div>
+            </div>
+
+            <!-- CHAT INPUT COMPOSER (ChatGPT style) -->
+            <div class="ai-composer-wrapper p-3">
+                <!-- Selected Attachment Preview Box -->
+                <div id="aiCoachAttachmentPreview" class="ai-attachment-preview d-none mb-2"></div>
+
+                <div class="ai-composer-bar">
+                    <!-- Photo Upload Button -->
+                    <button type="button" class="ai-composer-btn ai-attach-btn" id="btnUploadPhoto" onclick="triggerCoachFileSelect('photo')" title="Upload Food Photo (JPG, JPEG, PNG, WEBP)">
+                        <i class="bi bi-image"></i>
+                    </button>
+
+                    <!-- PDF Upload Button -->
+                    <button type="button" class="ai-composer-btn ai-attach-btn" id="btnUploadPdf" onclick="triggerCoachFileSelect('pdf')" title="Upload Diet or Prescription PDF">
+                        <i class="bi bi-file-earmark-pdf"></i>
+                    </button>
+
+                    <!-- Text Input Field -->
+                    <input type="text" id="aiCoachInput" class="form-control ai-composer-input border-0" 
+                        placeholder="Ask about your food, nutrition or workout..." 
+                        oninput="updateAICoachComposerState()" 
+                        onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); sendAICoachMessage(); }" 
+                        autocomplete="off">
+
+                    <!-- Send Button -->
+                    <button type="button" class="ai-composer-btn ai-send-btn" id="aiCoachSendBtn" onclick="sendAICoachMessage()" title="Send message" disabled>
+                        <i class="bi bi-arrow-up-short"></i>
+                    </button>
+                </div>
+                
+                <!-- Hidden File Input -->
+                <input type="file" id="aiCoachFileInput" class="d-none" accept=".jpg,.jpeg,.png,.webp,.pdf,.docx,.txt,image/*,application/pdf" onchange="handleCoachFilePicked(event)">
+            </div>
+        </div>
+
+        <!-- SMALL UNOBTRUSIVE HEALTH DISCLAIMER -->
+        <div class="ai-disclaimer-footer text-center mt-2 px-3 small">
+            ⚕️ <b>Health Disclaimer:</b> Health Tracker AI is an informational fitness and lifestyle coach based on your recorded logs. It does not provide medical diagnoses or prescriptions. For medical conditions, always consult a licensed physician.
+        </div>
+    </section>
+</div>
+
+<!-- FOOD DETAILS MODAL -->
+<div class="modal fade" id="foodModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalName" style="color: #F5F5F5;"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImg" class="img-fluid rounded mb-3" style="max-height:200px; background: #1C1C1C;" onerror="this.src='https://via.placeholder.com/400x300/1C1C1C/666666?text=Image+Not+Available'">
+                <p id="foodBadges"></p>
+                <input type="number" id="gramsInput" class="form-control mb-2" style="background: #1C1C1C; border: 1px solid #262626; color: #F5F5F5;" placeholder="Enter grams (e.g. 100)" oninput="calcNutrition()">
+                <div id="nutritionInfo" class="fw-bold" style="color: #FF8A1F;"></div>
+                <button class="btn fw-bold w-100 mt-3 rounded-pill py-2" style="background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff; border: none;" onclick="addFood()">Add to Log</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="modal fade" id="historyModal">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #1C1C1C; border-bottom: 1px solid #262626; color: #F5F5F5;">
+                <h5 id="histTitle" style="color: #F5F5F5;">📜 History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="histWorkoutDisplay" class="mb-3"></div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead><tr><th>Item</th><th>Qty</th><th>Cal</th><th>Pro</th><th>Fib</th></tr></thead>
+                        <tbody id="historyList"></tbody>
+                    </table>
+                </div>
+                <div class="text-end fw-bold" style="color: #FF8A1F;" id="histTotal"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn fw-bold w-100 rounded-pill" style="background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff; border: none;" onclick="editPastDay()">✏️ Edit/Update This Day</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EXERCISE VIDEO MODAL -->
+<div class="modal fade" id="videoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #1C1C1C; border-bottom: 1px solid #262626; color: #F5F5F5;">
+                <h5 class="modal-title d-flex align-items-center gap-2" style="color: #F5F5F5;">
+                    <span id="videoModalIcon">🎥</span>
+                    <span id="videoModalTitle">Exercise Video Tutorial</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeVideoModal()"></button>
+            </div>
+            <div class="modal-body p-3">
+                <!-- VIDEO PLAYER CONTAINER WITH EXCELLENT LOADING & ERROR HANDLING -->
+                <div class="video-container shadow-sm mb-3 position-relative rounded overflow-hidden" style="min-height: 280px; background: #0B0B0B;">
+                    <!-- LOADING SPINNER -->
+                    <div id="videoLoadingSpinner" class="d-flex flex-column align-items-center justify-content-center p-5 text-center w-100 h-100" style="min-height: 280px;">
+                        <div class="spinner-border mb-3" role="status" style="width: 3rem; height: 3rem; color: #FF8A1F;"></div>
+                        <h6 class="fw-bold mb-1" style="color: #F5F5F5;">Loading workout video...</h6>
+                        <small style="color: #A9A9A9;">Streaming HD exercise form guide</small>
+                    </div>
+
+                    <!-- ERROR / UNAVAILABLE STATE -->
+                    <div id="videoErrorState" class="d-none flex-column align-items-center justify-content-center p-4 text-center w-100 h-100" style="min-height: 280px;">
+                        <div class="fs-1 mb-2" style="color: #FF8A1F;">⚠️</div>
+                        <h5 class="fw-bold mb-1" style="color: #F5F5F5;">Video unavailable</h5>
+                        <p class="small mb-3" style="max-width: 400px; color: #A9A9A9;">Direct player embedding timed out or was restricted. You can retry loading or watch the tutorial directly.</p>
+                        <div class="d-flex gap-2 justify-content-center flex-wrap">
+                            <button class="btn btn-sm rounded-pill px-4 fw-bold shadow-sm" style="background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff; border: none;" onclick="retryLoadVideo()">
+                                🔄 Try Again
+                            </button>
+                            <a id="videoErrorExtLink" href="#" target="_blank" class="btn btn-sm btn-danger rounded-pill px-4 fw-bold shadow-sm d-inline-flex align-items-center gap-1">
+                                <i class="bi bi-youtube"></i> Open on YouTube
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- IFRAME PLAYER -->
+                    <iframe id="videoIframe" src="" title="Exercise Tutorial Video" class="w-100 h-100" style="min-height: 280px; display: none; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                    <div>
+                        <span class="badge fs-6" style="background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff;" id="videoModalMuscle">Target Muscle</span>
+                        <span class="badge" style="background: #262626; color: #A9A9A9;" id="videoModalEquip">Equipment</span>
+                    </div>
+                    <a id="videoExternalLink" href="#" target="_blank" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-youtube"></i> Open in YouTube
+                    </a>
+                </div>
+                <div class="form-cue-card">
+                    <h6 class="fw-bold mb-2" style="color: #FF8A1F;">💡 Proper Form & Technique:</h6>
+                    <p class="mb-2 small" style="color: #A9A9A9;" id="videoModalInstructions"></p>
+                    <div class="mt-2 pt-2 small" style="border-top: 1px solid #262626; color: #888;">
+                        <strong>Execution Tips:</strong> Squeeze the target muscle at peak contraction, control the return movement (eccentric phase), and maintain steady breathing.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn px-4" style="border: 1px solid #3A281E; color: #A9A9A9; background: transparent; border-radius: 20px;" data-bs-dismiss="modal" onclick="closeVideoModal()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- STEPS INPUT MODAL -->
+<div class="modal fade" id="stepsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #1C1C1C; border-bottom: 1px solid #262626; color: #F5F5F5;">
+                <h5 class="modal-title d-flex align-items-center gap-2" style="color: #F5F5F5;">
+                    <span>👣</span> <span>Log Daily Walking Steps</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3">
+                    <label class="form-label fw-bold fs-5" style="color: #F5F5F5;">Today's Steps Count:</label>
+                    <input type="number" id="inputStepsCount" class="form-control form-control-lg text-center fw-bold fs-2" style="background: #1C1C1C; border: 1.5px solid #262626; color: #6FAE3D;" placeholder="e.g. 6250" min="0" max="100000">
+                    <small style="color: #A9A9A9;">Enter total walking steps accumulated today</small>
+                </div>
+                <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap">
+                    <button class="btn btn-sm fw-bold rounded-pill px-3" style="border: 1px solid #6FAE3D; color: #6FAE3D; background: transparent;" onclick="quickAddSteps(1000)">+ 1,000</button>
+                    <button class="btn btn-sm fw-bold rounded-pill px-3" style="border: 1px solid #6FAE3D; color: #6FAE3D; background: transparent;" onclick="quickAddSteps(2500)">+ 2,500</button>
+                    <button class="btn btn-sm fw-bold rounded-pill px-3" style="border: 1px solid #6FAE3D; color: #6FAE3D; background: transparent;" onclick="quickAddSteps(5000)">+ 5,000</button>
+                    <button class="btn btn-sm rounded-pill px-3" style="border: 1px solid #3A281E; color: #A9A9A9; background: transparent;" onclick="document.getElementById('inputStepsCount').value = 0">Reset</button>
+                </div>
+                <div class="p-3 rounded text-start" style="background: #1C1C1C; border: 1px solid #262626;">
+                    <label class="form-label small fw-bold mb-1" style="color: #A9A9A9;">Daily Step Goal:</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" id="inputModalStepGoal" class="form-control" placeholder="10000" min="1000" step="500" style="background: #151515; border: 1px solid #262626; color: #F5F5F5;">
+                        <span class="input-group-text" style="background: #222; border: 1px solid #262626; color: #A9A9A9;">steps / day</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn px-3" style="border: 1px solid #3A281E; color: #A9A9A9; background: transparent; border-radius: 20px;" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn px-4 fw-bold shadow-sm rounded-pill" style="background: linear-gradient(135deg, #4D8424, #6FAE3D); color: #fff; border: none;" onclick="saveStepsModal()">💾 Save Steps</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- ================= DIET PLANS HISTORY MODAL ================= -->
+<div class="modal fade" id="dietPlansModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="background: #141414; border: 1px solid #2A2A2A; color: #F5F5F5;">
+            <div class="modal-header" style="border-bottom: 1px solid #262626;">
+                <h5 class="modal-title d-flex align-items-center gap-2">
+                    <span>📋</span> <span>My Saved 5-Meal Diet Plans</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3 p-md-4">
+                <div class="ai-diet-section-title-wrap mb-3 p-3 rounded-3" style="background: linear-gradient(135deg, rgba(255,138,31,0.08), rgba(111,174,61,0.05)); border: 1px solid rgba(255,138,31,0.25);">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-4">🥗</span>
+                            <h4 class="fw-bold mb-0 text-white" style="color: #FF8A1F !important; font-size: 1.25rem; letter-spacing: 0.5px;">Diet and Nutrition</h4>
+                        </div>
+                        <span class="badge rounded-pill px-3 py-1" style="background: rgba(111,174,61,0.18); color: #6FAE3D; border: 1px solid rgba(111,174,61,0.4); font-size: 11px;">
+                            <i class="bi bi-shield-check"></i> USDA & IFCT Verified
+                        </span>
+                    </div>
+                    <div class="small text-muted mt-1">Review, activate, and manage your saved 5-meal daily and weekly diet plans.</div>
+                </div>
+                <div id="savedDietPlansList" class="d-flex flex-column gap-3">
+                    <div class="text-center py-4 text-muted">Loading saved diet plans...</div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #262626;">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= PLANNED VS ACTUAL NUTRITION MODAL ================= -->
+<div class="modal fade" id="dietTrackingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background: #141414; border: 1px solid #2A2A2A; color: #F5F5F5;">
+            <div class="modal-header" style="border-bottom: 1px solid #262626;">
+                <h5 class="modal-title d-flex align-items-center gap-2">
+                    <span>📊</span> <span>Planned vs. Actually Consumed Nutrition</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3 p-md-4">
+                <div id="dietTrackingContent">
+                    <div class="text-center py-4 text-muted">Loading nutrition comparison...</div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #262626;">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= FOOD CONFIRMATION MODAL ================= -->
+<div class="modal fade" id="foodConfirmationModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="background: #141414; border: 1.5px solid #FF8A1F; color: #F5F5F5;">
+            <div class="modal-header" style="border-bottom: 1px solid #2A2A2A;">
+                <h5 class="modal-title d-flex align-items-center gap-2">
+                    <span>📑</span> <span>Document Understood – Confirm Available Foods</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3 p-md-4">
+                <div id="foodConfirmationBody">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #262626;">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn px-4 fw-bold shadow-sm rounded-pill" style="background: linear-gradient(135deg, #6B3F24, #FF8A1F); color: #fff; border: none;" onclick="submitConfirmedFoodsPlan()">
+                    ✅ Confirm Foods & Generate 5-Meal Plan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= DEDICATED DIET PLAN PRINT AREA (Screen hidden, Print visible) ================= -->
+<div id="dietPlanPrintArea" class="d-none"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

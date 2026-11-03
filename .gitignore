@@ -1,0 +1,26 @@
+# Environment and Secrets
+.env
+.env.local
+.env.*.local
+
+# Dependency and Build directories
+node_modules/
+backend/target/
+target/
+.mvn/
+dist/
+build/
+
+# Logs and runtime files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
