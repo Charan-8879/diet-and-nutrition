@@ -7,85 +7,357 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// ==================== CORS CONFIGURATION ====================
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:8080',
+  'http://localhost:5500',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:8080',
+  'http://127.0.0.1:5500'
+];
+if (process.env.CORS_ORIGIN) {
+  process.env.CORS_ORIGIN.split(',').forEach(o => {
+    const trimmed = o.trim();
+    if (trimmed) allowedOrigins.push(trimmed);
+  });
+}
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+    if (origin.endsWith('.vercel.app')) return callback(null, true);
+    if (process.env.CORS_ORIGIN === '*') return callback(null, true);
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname)));
 
-// ==================== MYSQL POOL & AUTH / DATA HELPERS ====================
+// ==================== MYSQL / TIDB CLOUD POOL & HELPERS ====================
 const crypto = require('crypto');
 let mysqlPool = null;
 try {
   const mysql = require('mysql2/promise');
+  const isTidbOrCloud = (process.env.DB_SSL === 'true') ||
+    (process.env.DB_HOST && process.env.DB_HOST.includes('tidbcloud.com')) ||
+    (Number(process.env.DB_PORT) === 4000);
+
+  let sslConfig = undefined;
+  if (isTidbOrCloud) {
+    sslConfig = {
+      minVersion: 'TLSv1.2',
+      rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
+    };
+    if (process.env.DB_CA_CERT) {
+      sslConfig.ca = process.env.DB_CA_CERT;
+    }
+  }
+
   mysqlPool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
+    port: Number(process.env.DB_PORT) || 3306,
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'Healthify@2026',
+    password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'healthify_db',
     waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+    connectionLimit: Number(process.env.DB_CONNECTION_LIMIT) || 10,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
+    ssl: sslConfig
   });
-  console.log('✅ MySQL connection pool established in Express (server.js).');
+
+  const hostDisplay = process.env.DB_HOST || 'localhost';
+  const portDisplay = process.env.DB_PORT || 3306;
+  const dbDisplay = process.env.DB_NAME || 'healthify_db';
+  console.log(`✅ MySQL/TiDB pool created (Target: ${hostDisplay}:${portDisplay}/${dbDisplay}, TLS: ${sslConfig ? 'enabled TLSv1.2+' : 'plain'}).`);
+  if (!process.env.DB_PASSWORD && hostDisplay !== 'localhost' && hostDisplay !== '127.0.0.1') {
+    console.warn('⚠️ Warning: DB_PASSWORD is not set while pointing to a remote database host.');
+  }
 } catch (e) {
-  console.warn('⚠️ MySQL connection pool could not be initialized in Node.js:', e.message);
+  console.warn('⚠️ MySQL/TiDB connection pool could not be initialized:', e.message);
 }
 
-// Automatically ensure required tables and columns exist in MySQL
+// Automatically ensure all 12 required tables and schema exist in MySQL / TiDB Cloud
 async function initDbTables() {
   if (!mysqlPool) return;
-  try {
-    await mysqlPool.query(`
-      CREATE TABLE IF NOT EXISTS uploaded_documents (
-        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-        user_id BIGINT NULL,
-        file_name VARCHAR(255) NOT NULL,
-        file_type VARCHAR(100) NULL,
-        file_size BIGINT NULL,
-        storage_provider VARCHAR(50) DEFAULT 'local',
-        file_url TEXT NOT NULL,
-        extracted_foods_count INT DEFAULT 0,
-        uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_docs_user (user_id)
-      )
-    `);
-  } catch (err) {
-    console.warn('Init uploaded_documents notice:', err.message);
+
+  const tables = [
+    {
+      name: 'users',
+      query: `
+        CREATE TABLE IF NOT EXISTS users (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(100) NOT NULL,
+          email VARCHAR(150) NOT NULL UNIQUE,
+          phone VARCHAR(30) NULL,
+          password VARCHAR(255) NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_users_email (email),
+          INDEX idx_users_phone (phone)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: 'user_profiles',
+      query: `
+        CREATE TABLE IF NOT EXISTS user_profiles (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL UNIQUE,
+          gender VARCHAR(50) NULL,
+          age DOUBLE NULL,
+          weight DOUBLE NULL,
+          height DOUBLE NULL,
+          activity DOUBLE NULL,
+          bmr DOUBLE NULL,
+          tdee DOUBLE NULL,
+          selected_goal VARCHAR(100) NULL,
+          target_calories DOUBLE NULL,
+          target_protein DOUBLE NULL,
+          confirmed_foods_json LONGTEXT NULL,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_user_profiles_user (user_id),
+          CONSTRAINT fk_user_profiles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: 'challenge_progress',
+      query: `
+        CREATE TABLE IF NOT EXISTS challenge_progress (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL UNIQUE,
+          total_days INT NOT NULL DEFAULT 25,
+          current_day INT NOT NULL DEFAULT 1,
+          start_date VARCHAR(50) NULL,
+          history_json LONGTEXT NULL,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_challenge_user (user_id),
+          CONSTRAINT fk_challenge_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: 'diet_plans',
+      query: `
+        CREATE TABLE IF NOT EXISTS diet_plans (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL,
+          title VARCHAR(200) NOT NULL,
+          plan_type VARCHAR(50) DEFAULT 'DAILY',
+          goal VARCHAR(100) NULL,
+          calorie_target DOUBLE NULL,
+          bmr DOUBLE NULL,
+          tdee DOUBLE NULL,
+          protein_target DOUBLE NULL,
+          carbs_target DOUBLE NULL,
+          fat_target DOUBLE NULL,
+          fibre_target DOUBLE NULL,
+          plan_json LONGTEXT NULL,
+          confirmed_foods_json LONGTEXT NULL,
+          doctor_notes TEXT NULL,
+          status VARCHAR(50) DEFAULT 'ACTIVE',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_diet_plans_user (user_id),
+          INDEX idx_diet_plans_status (status),
+          CONSTRAINT fk_diet_plans_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: 'diet_meal_consumptions',
+      query: `
+        CREATE TABLE IF NOT EXISTS diet_meal_consumptions (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL,
+          plan_id BIGINT NULL,
+          day_number INT NULL,
+          meal_type VARCHAR(50) NULL,
+          meal_name VARCHAR(150) NULL,
+          planned_cal DOUBLE NULL,
+          planned_protein DOUBLE NULL,
+          planned_carbs DOUBLE NULL,
+          planned_fat DOUBLE NULL,
+          planned_fibre DOUBLE NULL,
+          actual_cal DOUBLE NULL,
+          actual_protein DOUBLE NULL,
+          actual_carbs DOUBLE NULL,
+          actual_fat DOUBLE NULL,
+          actual_fibre DOUBLE NULL,
+          status VARCHAR(30) DEFAULT 'CONSUMED',
+          log_date VARCHAR(30) NULL,
+          consumed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_dmc_user (user_id),
+          INDEX idx_dmc_user_day (user_id, day_number),
+          INDEX idx_dmc_date (log_date),
+          CONSTRAINT fk_dmc_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: 'food_logs',
+      query: `
+        CREATE TABLE IF NOT EXISTS food_logs (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL,
+          name VARCHAR(150) NOT NULL,
+          grams DOUBLE NOT NULL,
+          cal DOUBLE NOT NULL,
+          protein DOUBLE NOT NULL,
+          fibre DOUBLE NOT NULL,
+          type VARCHAR(50) NULL,
+          log_date VARCHAR(30) NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_food_logs_user_date (user_id, log_date),
+          CONSTRAINT fk_food_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: 'daily_steps',
+      query: `
+        CREATE TABLE IF NOT EXISTS daily_steps (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL,
+          log_date VARCHAR(30) NOT NULL,
+          steps_count INT NOT NULL DEFAULT 0,
+          step_goal INT NOT NULL DEFAULT 10000,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_daily_steps_user_date (user_id, log_date),
+          CONSTRAINT fk_daily_steps_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: 'water_intake',
+      query: `
+        CREATE TABLE IF NOT EXISTS water_intake (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL,
+          log_date VARCHAR(30) NOT NULL,
+          glasses INT NOT NULL DEFAULT 0,
+          target_glasses INT NOT NULL DEFAULT 12,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_water_intake_user_date (user_id, log_date),
+          CONSTRAINT fk_water_intake_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: 'workout_logs',
+      query: `
+        CREATE TABLE IF NOT EXISTS workout_logs (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL,
+          workout_mode VARCHAR(50) NULL,
+          workout_title VARCHAR(150) NULL,
+          exercises_json TEXT NULL,
+          trained_muscles VARCHAR(255) NULL,
+          completed BOOLEAN DEFAULT FALSE,
+          log_date VARCHAR(30) NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_workout_logs_user_date (user_id, log_date),
+          CONSTRAINT fk_workout_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: 'supplements',
+      query: `
+        CREATE TABLE IF NOT EXISTS supplements (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NULL,
+          name VARCHAR(150) NOT NULL,
+          brand VARCHAR(150) NULL,
+          serving_size VARCHAR(50) NULL,
+          protein DOUBLE NULL,
+          cal DOUBLE NULL,
+          instructions TEXT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_supplements_user (user_id),
+          CONSTRAINT fk_supplements_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: 'uploaded_documents',
+      query: `
+        CREATE TABLE IF NOT EXISTS uploaded_documents (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NULL,
+          file_name VARCHAR(255) NOT NULL,
+          file_type VARCHAR(100) NULL,
+          file_size BIGINT NULL,
+          storage_provider VARCHAR(50) DEFAULT 'local',
+          file_url LONGTEXT NOT NULL,
+          extracted_foods_count INT DEFAULT 0,
+          uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_docs_user (user_id),
+          CONSTRAINT fk_uploaded_docs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    },
+    {
+      name: 'ai_chat_messages',
+      query: `
+        CREATE TABLE IF NOT EXISTS ai_chat_messages (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL,
+          sender VARCHAR(10) NOT NULL,
+          message_text MEDIUMTEXT NOT NULL,
+          source VARCHAR(50) DEFAULT 'groq',
+          diet_plan_id BIGINT NULL,
+          attachment_name VARCHAR(255) NULL,
+          attachment_type VARCHAR(100) NULL,
+          has_attachment BOOLEAN DEFAULT FALSE,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_ai_chat_user (user_id),
+          INDEX idx_ai_chat_created (created_at),
+          CONSTRAINT fk_ai_chat_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `
+    }
+  ];
+
+  for (const table of tables) {
+    try {
+      await mysqlPool.query(table.query);
+    } catch (err) {
+      console.warn(`Init table notice (${table.name}):`, err.message);
+    }
   }
 
+  // Schema patches / column validations
   try {
-    await mysqlPool.query(`
-      CREATE TABLE IF NOT EXISTS ai_chat_messages (
-        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-        user_id BIGINT NOT NULL,
-        sender VARCHAR(10) NOT NULL,
-        message_text MEDIUMTEXT NOT NULL,
-        source VARCHAR(50) DEFAULT 'groq',
-        diet_plan_id BIGINT NULL,
-        attachment_name VARCHAR(255) NULL,
-        attachment_type VARCHAR(100) NULL,
-        has_attachment BOOLEAN DEFAULT FALSE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_ai_chat_user (user_id),
-        INDEX idx_ai_chat_created (created_at),
-        CONSTRAINT fk_ai_chat_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    `);
-  } catch (err) {
-    console.warn('Init ai_chat_messages notice:', err.message);
-  }
-
-  try {
-    // Ensure confirmed_foods_json column exists in user_profiles
     const [cols] = await mysqlPool.query("SHOW COLUMNS FROM user_profiles LIKE 'confirmed_foods_json'");
     if (!cols || cols.length === 0) {
       await mysqlPool.query("ALTER TABLE user_profiles ADD COLUMN confirmed_foods_json LONGTEXT NULL");
     }
   } catch (err) {
-    console.warn('Init user_profiles column notice:', err.message);
+    console.warn('Init user_profiles confirmed_foods_json column notice:', err.message);
   }
+
+  try {
+    const [cols] = await mysqlPool.query("SHOW COLUMNS FROM user_profiles LIKE 'target_protein'");
+    if (!cols || cols.length === 0) {
+      await mysqlPool.query("ALTER TABLE user_profiles ADD COLUMN target_protein DOUBLE NULL");
+    }
+  } catch (err) {
+    console.warn('Init user_profiles target_protein column notice:', err.message);
+  }
+
+  console.log('✅ Database tables initialized (all 12 tables verified).');
 }
-initDbTables();
+initDbTables().catch(err => {
+  console.warn('Database initialization warning:', err.message);
+});
 
 function hashPassword(password) {
   if (!password) return '';
@@ -1713,11 +1985,22 @@ const userConfirmedFoodsStore = {};
 
 // ---------------- REST API ENDPOINTS ----------------
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'disconnected';
+  if (mysqlPool) {
+    try {
+      await mysqlPool.query('SELECT 1');
+      dbStatus = 'connected';
+    } catch (e) {
+      dbStatus = 'error: ' + e.message;
+    }
+  }
   res.json({
     status: 'ok',
     backend: 'Node Express (Healthify)',
-    database: mysqlPool ? 'healthify_db' : 'in-memory',
+    database: mysqlPool ? (process.env.DB_NAME || 'healthify_db') : 'in-memory',
+    dbConnection: dbStatus,
+    dbHost: process.env.DB_HOST ? (process.env.DB_HOST.includes('tidbcloud') ? 'TiDB Cloud Starter' : 'MySQL') : 'localhost',
     hasGroqKey: !!(GROQ_API_KEY && GROQ_API_KEY.trim() !== '' && GROQ_API_KEY !== 'your_new_groq_api_key' && GROQ_API_KEY !== 'your_groq_api_key'),
     hasGrokKey: false,
     hasGeminiKey: false,

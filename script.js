@@ -516,20 +516,50 @@ function switchLoginTab(tab) {
 // ==================== RESILIENT BACKEND & MYSQL CONNECTIVITY LAYER ====================
 let BACKEND_URL = (function() {
     if (typeof window !== 'undefined' && window.location) {
+        // 1. Explicit window override
+        if (window.__HEALTHIFY_API_URL__ && typeof window.__HEALTHIFY_API_URL__ === 'string' && window.__HEALTHIFY_API_URL__.trim()) {
+            return window.__HEALTHIFY_API_URL__.trim().replace(/\/+$/, '');
+        }
+        // 2. HTML meta tag configuration (<meta name="healthify-api-url" content="...">)
+        const metaTag = document.querySelector('meta[name="healthify-api-url"]');
+        if (metaTag && metaTag.content && metaTag.content.trim()) {
+            return metaTag.content.trim().replace(/\/+$/, '');
+        }
+        // 3. Persistent localStorage backend override
+        try {
+            const savedUrl = localStorage.getItem('ht_backend_url');
+            if (savedUrl && savedUrl.trim()) return savedUrl.trim().replace(/\/+$/, '');
+        } catch (e) {}
+
+        // 4. Same-origin if running directly on Node.js port 3000 or Spring Boot port 8080
         if (window.location.port === '3000' || window.location.port === '8080') {
             return window.location.origin;
         }
+
+        // 5. Localhost development (Live Server, VSCode, Vite, file://, etc.)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') {
+            return 'http://localhost:3000';
+        }
+
+        // 6. Deployed production host (e.g. Vercel, Netlify, custom domain)
+        return 'https://diet-and-nutrition.onrender.com';
     }
     return 'http://localhost:3000';
 })();
 let AI_BACKEND_URL = BACKEND_URL;
 let isBackendConnected = false;
 
+function getBackendEndpoints() {
+    const primary = BACKEND_URL || 'http://localhost:3000';
+    const isLocal = primary.includes('localhost') || primary.includes('127.0.0.1');
+    const alt = isLocal ? (primary.includes('8080') ? 'http://localhost:3000' : 'http://localhost:8080') : null;
+    return { primary, alt };
+}
+
 // Universal resilient API fetch helper with automatic 3000 (Express) / 8080 (Spring Boot) fallback
 async function apiFetch(endpoint, options = {}) {
     const cleanPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const primary = BACKEND_URL || 'http://localhost:3000';
-    const alt = primary.includes('8080') ? 'http://localhost:3000' : 'http://localhost:8080';
+    const { primary, alt } = getBackendEndpoints();
 
     const tryFetch = async (baseUrl) => {
         const url = `${baseUrl.replace(/\/+$/, '')}${cleanPath}`;
@@ -565,16 +595,18 @@ async function apiFetch(endpoint, options = {}) {
         return result.data;
     }
 
-    // 2. Try alternate backend
-    result = await tryFetch(alt);
-    if (result.ok || (result.status && result.status < 500)) {
-        BACKEND_URL = alt;
-        AI_BACKEND_URL = alt;
-        if (!isBackendConnected) {
-            isBackendConnected = true;
-            updateBackendStatusUI(true, alt.includes('8080') ? 'healthify_db' : 'healthify_express');
+    // 2. Try alternate backend (if available in local environment)
+    if (alt && alt !== primary) {
+        result = await tryFetch(alt);
+        if (result.ok || (result.status && result.status < 500)) {
+            BACKEND_URL = alt;
+            AI_BACKEND_URL = alt;
+            if (!isBackendConnected) {
+                isBackendConnected = true;
+                updateBackendStatusUI(true, alt.includes('8080') ? 'healthify_db' : 'healthify_express');
+            }
+            return result.data;
         }
-        return result.data;
     }
 
     // 3. Mark offline
@@ -586,8 +618,7 @@ async function apiFetch(endpoint, options = {}) {
 }
 
 function checkBackendHealth(interactive = false) {
-    const primary = BACKEND_URL || 'http://localhost:3000';
-    const alt = primary.includes('8080') ? 'http://localhost:3000' : 'http://localhost:8080';
+    const { primary, alt } = getBackendEndpoints();
 
     const tryHealth = (url, nextFallback) => {
         const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
@@ -617,7 +648,7 @@ function checkBackendHealth(interactive = false) {
             });
     };
 
-    tryHealth(primary, () => tryHealth(alt, null));
+    tryHealth(primary, alt ? () => tryHealth(alt, null) : null);
 }
 
 function updateBackendStatusUI(connected, dbName = 'healthify_db') {
@@ -657,8 +688,7 @@ function updateBackendStatusUI(connected, dbName = 'healthify_db') {
 
 async function sendAuthApi(endpoint, payload) {
     // Primary backend URL, with automatic fallback between Spring Boot (8080) and Express (3000)
-    const primaryUrl = BACKEND_URL || 'http://localhost:8080';
-    const altUrl = (primaryUrl.includes('8080')) ? 'http://localhost:3000' : 'http://localhost:8080';
+    const { primary: primaryUrl, alt: altUrl } = getBackendEndpoints();
 
     const tryFetch = async (baseUrl) => {
         const url = `${baseUrl.replace(/\/+$/, '')}/api/auth/${endpoint}`;
@@ -689,17 +719,19 @@ async function sendAuthApi(endpoint, payload) {
         return { success: true, user: result.data.user };
     }
 
-    // 2. Try alternate backend if primary network connection failed
-    result = await tryFetch(altUrl);
-    if (result.ok) {
-        BACKEND_URL = altUrl;
-        AI_BACKEND_URL = altUrl;
-        isBackendConnected = true;
-        updateBackendStatusUI(true, altUrl.includes('8080') ? 'healthify_db' : 'healthify_express');
-        if (!result.data.success) {
-            return { success: false, error: result.data.error || 'Authentication failed' };
+    // 2. Try alternate backend if primary network connection failed (if available in local environment)
+    if (altUrl && altUrl !== primaryUrl) {
+        result = await tryFetch(altUrl);
+        if (result.ok) {
+            BACKEND_URL = altUrl;
+            AI_BACKEND_URL = altUrl;
+            isBackendConnected = true;
+            updateBackendStatusUI(true, altUrl.includes('8080') ? 'healthify_db' : 'healthify_express');
+            if (!result.data.success) {
+                return { success: false, error: result.data.error || 'Authentication failed' };
+            }
+            return { success: true, user: result.data.user };
         }
-        return { success: true, user: result.data.user };
     }
 
     // 3. Fallback to offline local storage only if both backends are unreachable
@@ -1405,8 +1437,7 @@ let isRegPhoneAvailable = null;
 let phoneCheckTimer = null;
 
 async function checkPhoneAvailabilityApi(phone) {
-    const primaryUrl = BACKEND_URL || 'http://localhost:8080';
-    const altUrl = (primaryUrl.includes('8080')) ? 'http://localhost:3000' : 'http://localhost:8080';
+    const { primary: primaryUrl, alt: altUrl } = getBackendEndpoints();
 
     const tryCheck = async (baseUrl) => {
         const url = `${baseUrl.replace(/\/+$/, '')}/api/auth/check-phone?phone=${encodeURIComponent(phone)}`;
@@ -1430,9 +1461,11 @@ async function checkPhoneAvailabilityApi(phone) {
     if (result.ok && result.data && result.data.success !== undefined) {
         return result.data;
     }
-    result = await tryCheck(altUrl);
-    if (result.ok && result.data && result.data.success !== undefined) {
-        return result.data;
+    if (altUrl && altUrl !== primaryUrl) {
+        result = await tryCheck(altUrl);
+        if (result.ok && result.data && result.data.success !== undefined) {
+            return result.data;
+        }
     }
 
     // Offline / fallback to local storage
