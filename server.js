@@ -38,6 +38,11 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname)));
 
+// Explicit root route handler to ensure index.html is always served
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // ==================== MYSQL / TIDB CLOUD POOL & HELPERS ====================
 const crypto = require('crypto');
 let mysqlPool = null;
